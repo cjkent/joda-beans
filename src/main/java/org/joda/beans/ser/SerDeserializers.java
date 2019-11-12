@@ -174,7 +174,26 @@ public final class SerDeserializers {
         for (SerDeserializerProvider provider : providers) {
             deser = provider.findDeserializer(type);
             if (deser != null) {
+                deserializers.put(type, deser);
                 return deser;
+            }
+        }
+        DeserializerProvider providerAnnotation = type.getAnnotation(DeserializerProvider.class);
+        if (providerAnnotation != null) {
+            Class<? extends SerDeserializerProvider> providerClass = providerAnnotation.value();
+            try {
+                SerDeserializerProvider provider = providerClass.getDeclaredConstructor().newInstance();
+                registerProvider(provider);
+                deser = provider.findDeserializer(type);
+                if (deser == null) {
+                    throw new IllegalStateException("Type " + type.getName() + " declares a deserializer provider " +
+                        "of type " + providerClass.getName() + " but the provider did not provide a deserializer");
+                }
+                deserializers.put(type, deser);
+                return deser;
+            } catch (Exception e) {
+                throw new IllegalStateException("Unable to create instance of " + providerClass.getName() +
+                    " to provide deserializer for " + type.getName());
             }
         }
         return defaultDeserializer;

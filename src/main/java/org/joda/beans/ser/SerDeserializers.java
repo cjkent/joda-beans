@@ -178,7 +178,7 @@ public final class SerDeserializers {
                 return deser;
             }
         }
-        DeserializerProvider providerAnnotation = type.getAnnotation(DeserializerProvider.class);
+        DeserializerProvider providerAnnotation = findProviderAnnotation(type);
         if (providerAnnotation != null) {
             Class<? extends SerDeserializerProvider> providerClass = providerAnnotation.value();
             try {
@@ -197,6 +197,24 @@ public final class SerDeserializers {
             }
         }
         return defaultDeserializer;
+    }
+
+    private DeserializerProvider findProviderAnnotation(Class<?> type) {
+        DeserializerProvider providerAnnotation = type.getAnnotation(DeserializerProvider.class);
+        if (providerAnnotation != null) {
+            return providerAnnotation;
+        }
+        for (Class<?> implementedInterface : type.getInterfaces()) {
+            providerAnnotation = implementedInterface.getAnnotation(DeserializerProvider.class);
+            if (providerAnnotation != null) {
+                return providerAnnotation;
+            }
+        }
+        Class<?> superclass = type.getSuperclass();
+        if (superclass.equals(Object.class)) {
+            return null;
+        }
+        return findProviderAnnotation(superclass);
     }
 
     /**

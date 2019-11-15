@@ -199,24 +199,6 @@ public final class SerDeserializers {
         return defaultDeserializer;
     }
 
-    private DeserializerProvider findProviderAnnotation(Class<?> type) {
-        DeserializerProvider providerAnnotation = type.getAnnotation(DeserializerProvider.class);
-        if (providerAnnotation != null) {
-            return providerAnnotation;
-        }
-        for (Class<?> implementedInterface : type.getInterfaces()) {
-            providerAnnotation = implementedInterface.getAnnotation(DeserializerProvider.class);
-            if (providerAnnotation != null) {
-                return providerAnnotation;
-            }
-        }
-        Class<?> superclass = type.getSuperclass();
-        if (superclass.equals(Object.class)) {
-            return null;
-        }
-        return findProviderAnnotation(superclass);
-    }
-
     /**
      * Decodes the type
      * 
@@ -367,6 +349,27 @@ public final class SerDeserializers {
                 return underlying.build(beanType, builder);
             }
         };
+    }
+
+    // returns the DeserializerProvider annotation from the class or null if none can be found.
+    // the class and all its superclasses and interfaces are searched.
+    // if the annotation is found in multiple places then it is undefined which is returned.
+    private DeserializerProvider findProviderAnnotation(Class<?> type) {
+        DeserializerProvider providerAnnotation = type.getAnnotation(DeserializerProvider.class);
+        if (providerAnnotation != null) {
+            return providerAnnotation;
+        }
+        for (Class<?> implementedInterface : type.getInterfaces()) {
+            providerAnnotation = implementedInterface.getAnnotation(DeserializerProvider.class);
+            if (providerAnnotation != null) {
+                return providerAnnotation;
+            }
+        }
+        Class<?> superclass = type.getSuperclass();
+        if (superclass.equals(Object.class)) {
+            return null;
+        }
+        return findProviderAnnotation(superclass);
     }
 
     //-----------------------------------------------------------------------
